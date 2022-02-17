@@ -1,16 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import styled from "styled-components";
+import { Layout } from "antd";
+
 import {
   SAMPLE_WALLET_ADDRESS,
   ETHEREUM_REQUES_ACCOUNTS_METHOD,
   RARIBLE_API_URL,
-} from "./constants/index";
+} from "./settings/constants";
+import AccountConnectionCard from "./components/AccountConnectionCard";
+import NFTGridContainer from "./components/NFTGridContainer";
 import "./App.css";
+
+const { Content } = Layout;
+
+const AppContainer = styled(Content)`
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+`;
 
 function App() {
   const [walletAddress, setWalletAddress] = useState(null);
   const [nftItems, setNftItems] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  console.log(nftItems);
   const connectWallet = async () => {
     if (typeof window.ethereum !== "undefined") {
       const accounts = await window.ethereum.request({
@@ -22,24 +36,29 @@ function App() {
   };
 
   const getNftData = async () => {
-    if (!walletAddress) return;
-
+    setIsLoading(true);
     const response = await fetch(`${RARIBLE_API_URL}${SAMPLE_WALLET_ADDRESS}`);
 
     const data = await response.json();
 
     setNftItems(data.items);
+    setIsLoading(false);
   };
 
-  useEffect(() => {
-    getNftData();
-  }, [walletAddress]);
-
   return (
-    <div className="App">
-      <div>Account: {walletAddress}</div>
-      <button onClick={connectWallet}>Connect Wallet</button>
-    </div>
+    <AppContainer className="App">
+      {!nftItems ? (
+        <AccountConnectionCard
+          connectWallet={connectWallet}
+          getNftData={getNftData}
+          walletAddress={walletAddress}
+          setWalletAddress={setWalletAddress}
+          isLoading={isLoading}
+        />
+      ) : (
+        <NFTGridContainer nftItems={nftItems} />
+      )}
+    </AppContainer>
   );
 }
 
